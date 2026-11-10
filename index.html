@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Tender & RFQ Log</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📑</text></svg>">
+<meta name="apple-mobile-web-app-title" content="Tenders">
+<meta name="theme-color" content="#14212b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same family as the ClimaCore / PipeRenu logs; each tender carries a step track from Assigned to Won or Lost */
+:root{
+  --bg:#f3f6f8; --panel:#fff; --ink:#14212b; --muted:#5d6f7c; --line:#d9e2e8; --soft:#e9eff3;
+  --accent:#0b6fa4; --accent-ink:#fff;
+  --warn:#b45309; --warn-bg:#fdf0dc; --won:#15803d; --won-bg:#dcf3e3; --lost:#9f1d2d; --lost-bg:#f9e0e3;
+  --d-leakfind:#1d5fa8; --d-electricore:#c27c0e; --d-piperenu:#0f7a6c; --d-climacore:#2a9fd6; --d-dc24:#6b5b2e;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e161c; --panel:#152129; --ink:#e3ecf1; --muted:#93a6b3; --line:#26353f; --soft:#1b2a33;
+  --accent:#4fb3e8; --accent-ink:#06202e; --warn:#f2a65a; --warn-bg:#3a2712; --won:#5fd08a; --won-bg:#123522; --lost:#f08391; --lost-bg:#3c1820;
+  --d-leakfind:#6ea8ea; --d-electricore:#f0b54a; --d-piperenu:#4fc7b5; --d-climacore:#6cc8f2; --d-dc24:#c7b27a; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e161c; --panel:#152129; --ink:#e3ecf1; --muted:#93a6b3; --line:#26353f; --soft:#1b2a33;
+  --accent:#4fb3e8; --accent-ink:#06202e; --warn:#f2a65a; --warn-bg:#3a2712; --won:#5fd08a; --won-bg:#123522; --lost:#f08391; --lost-bg:#3c1820;
+  --d-leakfind:#6ea8ea; --d-electricore:#f0b54a; --d-piperenu:#4fc7b5; --d-climacore:#6cc8f2; --d-dc24:#c7b27a; color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);padding:20px 16px 48px}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:16px}
+h1{font:800 clamp(24px,4vw,32px)/1.1 var(--f-display);font-stretch:85%;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:13px}
+.head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.who-bar{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.linkbtn{border:0;background:none;color:var(--accent);padding:0;font:600 12px var(--f-body);cursor:pointer}
+button{font:600 13px var(--f-body);border-radius:6px;padding:7px 12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input,select,textarea{font:13px var(--f-body);padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+textarea{resize:vertical;min-height:54px;line-height:1.45}
+.login{max-width:420px;margin:12vh auto 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:24px;display:grid;gap:12px}
+.msg{font-size:13px;color:var(--muted)} .msg.err{color:var(--lost)}
+.tabs{display:flex;gap:0;flex-wrap:wrap;border-bottom:2px solid var(--line)}
+.tab{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:9px 14px 7px;margin-bottom:-2px;color:var(--muted);font:700 14px var(--f-display);font-stretch:90%}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--dc,var(--ink))}
+.tab .c{font:600 12px var(--f-body);color:var(--muted);margin-left:5px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:600 12px var(--f-body);border-radius:999px;padding:5px 12px;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tools input[type=search]{flex:1 1 220px;width:auto}
+.list{display:grid;gap:10px}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
+.t{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--dc,var(--line));border-radius:8px}
+.t-sum{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr) minmax(0,1.5fr) auto;gap:10px 18px;padding:12px 14px;align-items:start;cursor:pointer}
+@media (max-width:900px){.t-sum{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.t-ref{font:600 12px var(--f-body);color:var(--muted)}
+.t-ref b{color:var(--dc);font-weight:700}
+.t-title{font:700 16px/1.25 var(--f-display);font-stretch:92%;margin:2px 0}
+.t-meta{font-size:13px;color:var(--muted)}
+.k{font:600 11px var(--f-body);color:var(--muted)}
+.v{font-size:13px}
+.v.soon{color:var(--warn);font-weight:600} .v.past{color:var(--muted);text-decoration:line-through}
+.badge{display:inline-block;font:700 12px var(--f-body);padding:2px 9px;border-radius:999px}
+.badge.won{background:var(--won-bg);color:var(--won)} .badge.lost{background:var(--lost-bg);color:var(--lost)} .badge.warn{background:var(--warn-bg);color:var(--warn)}
+.track{display:flex;align-items:center;gap:0;margin-top:6px}
+.step{display:flex;align-items:center;font:600 11px var(--f-body);color:var(--muted);white-space:nowrap}
+.step i{width:10px;height:10px;border-radius:50%;border:2px solid var(--line);background:var(--panel);margin-right:4px;flex:none}
+.step.done{color:var(--ink)} .step.done i{background:var(--dc,var(--accent));border-color:var(--dc,var(--accent))}
+.step.bad{color:var(--lost)} .step.bad i{background:var(--lost);border-color:var(--lost)}
+.step.good i{background:var(--won);border-color:var(--won)} .step.good{color:var(--won)}
+.step+.step::before{content:"";width:14px;height:2px;background:var(--line);margin:0 4px}
+@media (max-width:640px){.track{flex-wrap:wrap;row-gap:4px}}
+.t-det{border-top:1px solid var(--line);padding:14px;display:grid;gap:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px 14px}
+.grid label,.f{display:grid;gap:3px;font:600 11px var(--f-body);color:var(--muted)}
+.wide{grid-column:1/-1}
+.panel{background:var(--soft);border-radius:8px;padding:12px;display:grid;gap:10px}
+.panel h3{font:700 14px var(--f-display);font-stretch:92%;margin:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg button.won[aria-pressed="true"]{background:var(--won);border-color:var(--won);color:#fff}
+.seg button.lost[aria-pressed="true"],.seg button.decl[aria-pressed="true"]{background:var(--lost);border-color:var(--lost);color:#fff}
+.pill{display:inline-flex;align-items:center;gap:6px;font:600 12px var(--f-body);border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel);cursor:pointer}
+.pill[aria-pressed="true"]{border-color:var(--dc,var(--accent));background:var(--dc,var(--accent));color:#fff}
+.stamp{font-size:12px;color:var(--muted)}
+.fu{display:grid;gap:6px}
+.fu-item{font-size:13px;border-left:3px solid var(--line);padding:2px 0 2px 10px}
+.fu-item .stamp{display:block}
+.fu-item.system{border-left-color:var(--dc,var(--accent))}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);max-width:760px;width:calc(100% - 24px);padding:18px}
+dialog::backdrop{background:rgba(10,20,28,.45)}
+.saved{font-size:12px;color:var(--won)}
+@media (prefers-reduced-motion:no-preference){.t-det{animation:open .18s ease-out}@keyframes open{from{opacity:0;transform:translateY(-4px)}}}
+</style>
+</head>
+<body>
+<div class="login" id="login" hidden>
+  <h1>Tender &amp; RFQ Log</h1>
+  <p class="sub">Sign in with the email and password Mariette gave you.</p>
+  <form id="loginForm"><div style="display:grid;gap:10px"><input type="email" id="loginEmail" required placeholder="Email" aria-label="Email address" autocomplete="username"><input type="password" id="loginPw" required placeholder="Password" aria-label="Password" autocomplete="current-password"><button type="submit" class="primary">Sign in</button></div></form>
+  <p class="msg" id="loginMsg"></p>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="head">
+    <div>
+      <h1>Tender &amp; RFQ Log</h1>
+      <p class="sub" id="summary"></p>
+      <p class="who-bar"><span id="whoami"></span><button type="button" class="linkbtn" id="pwBtn">Change password</button><button type="button" class="linkbtn" id="signOut">Sign out</button></p>
+      <form id="pwForm" class="who-bar" hidden><input type="password" id="newPw" minlength="8" placeholder="New password (8+ characters)" aria-label="New password" autocomplete="new-password" style="width:220px"><button type="submit" class="linkbtn">Save</button><span id="pwMsg"></span></form>
+    </div>
+    <button type="button" class="primary" id="addBtn">Add tender or RFQ</button>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="tools">
+    <div class="row" id="chips"></div>
+    <input type="search" id="q" placeholder="Search title, number, location, issuer" aria-label="Search tenders">
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<dialog id="addDlg">
+  <form id="addForm" method="dialog" style="display:grid;gap:14px">
+    <h2 style="font:800 22px var(--f-display);font-stretch:88%;margin:0">Add tender or RFQ</h2>
+    <div class="grid">
+      <label>Division<select name="division" required></select></label>
+      <label>Type<select name="kind"><option>Tender</option><option>RFQ</option><option>Private project</option></select></label>
+      <label>DTA number<input name="dta_no" placeholder="DTA 1161139"></label>
+      <label>PPA number<input name="ppa_no" placeholder="PPA 38503"></label>
+      <label class="wide">Title<input name="title" required></label>
+      <label>Contract number<input name="contract_no"></label>
+      <label>Issued by<input name="issuer" placeholder="e.g. Stellenbosch Municipality"></label>
+      <label>Location<input name="location"></label>
+      <label>Closing date and time<input type="datetime-local" name="closing_at"></label>
+    </div>
+    <p class="sub" style="margin:0">Everyone in the division is assigned automatically. Add the rest on the tender itself.</p>
+    <div class="row"><button type="submit" class="primary" value="save">Add to log</button><button type="button" id="addCancel">Cancel</button><span class="msg" id="addMsg"></span></div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL="https://gjrmxwwujudgxkqkpyby.supabase.co";
+const SUPABASE_KEY="sb_publishable_EyqmNpJcErSFmE2BO9znAA_UFNmOlxX";
+const DIVS=["Leakfind","Electricore","PipeRenu","ClimaCore","DC24"];
+const DCOL={Leakfind:"var(--d-leakfind)",Electricore:"var(--d-electricore)",PipeRenu:"var(--d-piperenu)",ClimaCore:"var(--d-climacore)",DC24:"var(--d-dc24)"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let sb,me="",members=[],tenders=[],fus=[],tab="All",filter="action",q="",open=new Set();
+
+const fmt=t=>t?new Date(t).toLocaleString("en-ZA",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+const fmtD=t=>t?new Date(t).toLocaleDateString("en-ZA",{day:"numeric",month:"short",year:"numeric"}):"";
+const toLocalInput=t=>{if(!t)return"";const d=new Date(t);const p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+const fromLocalInput=v=>v?new Date(v).toISOString():null;
+const daysTo=t=>t?Math.ceil((new Date(t)-new Date())/864e5):null;
+const nameOf=e=>{const m=members.find(x=>x.email.toLowerCase()===String(e||"").toLowerCase());return m?m.name:(e==="claude"?"Claude":(e||""))};
+const isAdmin=()=>members.some(m=>m.email.toLowerCase()===me&&m.is_admin);
+const isAssigned=t=>(t.assigned_to||[]).map(x=>x.toLowerCase()).includes(me);
+const closed=t=>!!t.outcome||t.decision==="Declined"||(t.closing_at&&new Date(t.closing_at)<new Date()&&t.work_status!=="Completed");
+const needsAction=t=>!closed(t)&&(!t.acknowledged_at||!t.decision||(t.decision==="Accepted"&&t.work_status!=="Completed"&&daysTo(t.closing_at)!==null&&daysTo(t.closing_at)<=5)||(t.work_status==="Completed"&&!t.outcome&&false));
+
+const FILTERS=[["action","Needs action",needsAction],["mine","Assigned to me",t=>isAssigned(t)&&!closed(t)],["open","Open",t=>!closed(t)],["accepted","Accepted",t=>t.decision==="Accepted"&&!t.outcome],["declined","Declined",t=>t.decision==="Declined"],["won","Won",t=>t.outcome==="Won"],["lost","Lost",t=>t.outcome==="Lost"],["all","All",()=>true]];
+
+function render(){
+  const inTab=tenders.filter(t=>tab==="All"||t.division===tab);
+  $("tabs").innerHTML=["All",...DIVS].map(d=>{const n=tenders.filter(t=>(d==="All"||t.division===d)&&!closed(t)).length;
+    return `<button class="tab" role="tab" aria-selected="${tab===d}" data-tab="${d}" style="--dc:${DCOL[d]||"var(--ink)"}">${d}<span class="c">${n}</span></button>`}).join("");
+  $("chips").innerHTML=FILTERS.map(([k,l,f])=>`<button class="chip" aria-pressed="${filter===k}" data-f="${k}">${l} <span style="opacity:.7">${inTab.filter(f).length}</span></button>`).join("");
+  const f=FILTERS.find(x=>x[0]===filter)[2];
+  const ql=q.toLowerCase();
+  const rows=inTab.filter(f).filter(t=>!ql||[t.title,t.dta_no,t.ppa_no,t.contract_no,t.location,t.issuer,t.id].join(" ").toLowerCase().includes(ql))
+    .sort((a,b)=>(closed(a)-closed(b))||((a.closing_at?new Date(a.closing_at):9e15)-(b.closing_at?new Date(b.closing_at):9e15))||b.created_at.localeCompare(a.created_at));
+  const openN=tenders.filter(t=>!closed(t)).length, act=tenders.filter(needsAction).length, won=tenders.filter(t=>t.outcome==="Won").length;
+  $("summary").innerHTML=`<b>${openN}</b> open · <b>${act}</b> need action · <b>${won}</b> won`;
+  $("list").innerHTML=rows.length?rows.map(card).join(""):`<div class="empty">${tenders.length?"Nothing matches this filter. Try All.":"No tenders yet. Claude adds relevant Leads 2 Business tenders every weekday morning, or add one yourself."}</div>`;
+}
+
+function track(t){
+  const s=[];const st=(cls,l)=>`<span class="step ${cls}"><i></i>${l}</span>`;
+  s.push(st((t.assigned_to||[]).length?"done":"","Assigned"));
+  s.push(st(t.acknowledged_at?"done":"","Acknowledged"));
+  if(t.decision==="Declined"){s.push(st("bad","Declined"));return s.join("")}
+  s.push(st(t.decision==="Accepted"?"done":"","Accepted"));
+  s.push(st(t.work_status?"done":"","In progress"));
+  s.push(st(t.work_status==="Completed"?"done":"","Completed"));
+  s.push(t.outcome==="Won"?st("good","Won"):t.outcome==="Lost"?st("bad","Lost"):st("","Won / lost"));
+  return s.join("");
+}
+
+function card(t){
+  const d=daysTo(t.closing_at), lastFu=fus.filter(f=>f.tender_id===t.id&&f.kind==="follow-up").at(-1);
+  const closeCls=t.closing_at?(d<0?"past":d<=5?"soon":""):"";
+  const site=t.site_compulsory?`Compulsory: ${fmt(t.site_at)||"date not filled in"}`:t.site_compulsory===false?"Not compulsory":"Not filled in";
+  const out=t.outcome?`<span class="badge ${t.outcome.toLowerCase()}">${t.outcome}</span>`:(!t.acknowledged_at&&!closed(t)?`<span class="badge warn">Not acknowledged</span>`:"");
+  return `<article class="t" style="--dc:${DCOL[t.division]}" data-id="${esc(t.id)}">
+  <div class="t-sum" data-toggle="${esc(t.id)}" tabindex="0" role="button" aria-expanded="${open.has(t.id)}">
+    <div><div class="t-ref"><b>${esc(t.division)}</b> ${esc(t.id)} · ${esc(t.kind)}${t.dta_no?" · "+esc(t.dta_no):""}${t.ppa_no?" · "+esc(t.ppa_no):""} · received ${fmtD(t.received)}</div>
+      <div class="t-title">${esc(t.title)}</div>
+      <div class="t-meta">${[t.issuer,t.location,t.cidb_grading,t.value].filter(Boolean).map(esc).join(" · ")}</div>
+      <div class="track">${track(t)}</div></div>
+    <div><div class="k">Closes</div><div class="v ${closeCls}">${t.closing_at?fmt(t.closing_at)+(d>=0?` (${d===0?"today":d+" day"+(d>1?"s":"")})`:""):"Not filled in"}</div>
+      <div class="k" style="margin-top:6px">Site meeting</div><div class="v">${esc(site)}</div></div>
+    <div><div class="k">Assigned to</div><div class="v">${(t.assigned_to||[]).map(nameOf).map(esc).join(", ")||"Nobody"}</div>
+      <div class="k" style="margin-top:6px">Followed up</div><div class="v">${lastFu?"Yes, "+fmt(lastFu.at)+" ("+esc(nameOf(lastFu.by_email))+")":"No"}</div></div>
+    <div>${out}</div>
+  </div>
+  ${open.has(t.id)?detail(t):""}
+</article>`;
+}
+
+function inp(t,f,label,type="text",cls=""){
+  const v=type==="datetime-local"?toLocalInput(t[f]):(t[f]??"");
+  return `<label class="${cls}">${label}<input type="${type}" data-f="${f}" value="${esc(v)}"></label>`;
+}
+function detail(t){
+  const can=isAssigned(t)||isAdmin();
+  const tfus=fus.filter(f=>f.tender_id===t.id);
+  const divMembers=members.filter(m=>m.active&&(m.divisions||[]).includes(t.division));
+  const others=members.filter(m=>m.active&&!divMembers.includes(m)&&(t.assigned_to||[]).map(x=>x.toLowerCase()).includes(m.email.toLowerCase()));
+  const pill=m=>`<button type="button" class="pill" data-assign="${esc(m.email)}" aria-pressed="${(t.assigned_to||[]).map(x=>x.toLowerCase()).includes(m.email.toLowerCase())}">${esc(m.name)}</button>`;
+  return `<div class="t-det">
+  <div class="cols">
+    <div class="panel"><h3>Assigned to</h3>
+      <div class="row">${[...divMembers,...others].map(pill).join("")}</div>
+      <details><summary class="stamp" style="cursor:pointer">Assign someone from another division</summary><div class="row" style="margin-top:8px">${members.filter(m=>m.active&&!divMembers.includes(m)&&!others.includes(m)).map(pill).join("")}</div></details>
+    </div>
+    <div class="panel"><h3>Acknowledgement of receipt</h3>
+      ${t.acknowledged_at?`<div class="v">Acknowledged by <b>${esc(nameOf(t.acknowledged_by))}</b>, ${fmt(t.acknowledged_at)}</div>`:
+        `<div class="row"><button type="button" class="primary" data-ack ${can?"":"disabled"}>I've received this</button>${can?"":`<span class="stamp">Only the people assigned can acknowledge.</span>`}</div>`}
+    </div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Accepted or declined</h3>
+      <div class="row seg"><button type="button" data-decide="Accepted" aria-pressed="${t.decision==="Accepted"}">Accept</button><button type="button" class="decl" data-decide="Declined" aria-pressed="${t.decision==="Declined"}">Decline</button>${t.decision?`<button type="button" class="linkbtn" data-decide="">Clear</button>`:""}</div>
+      <label class="f">Reason or notes (needed when declining)<textarea data-decnotes>${esc(t.decision_notes||"")}</textarea></label>
+      ${t.decision?`<div class="stamp">${esc(t.decision)} by ${esc(nameOf(t.decision_by))}, ${fmt(t.decision_at)}</div>`:""}
+    </div>
+    <div class="panel"><h3>Progress and outcome</h3>
+      <div class="row seg"><button type="button" data-work="" aria-pressed="${!t.work_status}">Not started</button><button type="button" data-work="In progress" aria-pressed="${t.work_status==="In progress"}">In progress</button><button type="button" data-work="Completed" aria-pressed="${t.work_status==="Completed"}">Completed (submitted)</button></div>
+      ${t.work_status?`<div class="stamp">${esc(t.work_status)} since ${fmt(t.work_at)} (${esc(nameOf(t.work_by))})</div>`:""}
+      <div class="row seg"><button type="button" data-outcome="" aria-pressed="${!t.outcome}">Awaiting</button><button type="button" class="won" data-outcome="Won" aria-pressed="${t.outcome==="Won"}">Won</button><button type="button" class="lost" data-outcome="Lost" aria-pressed="${t.outcome==="Lost"}">Lost</button></div>
+      <label class="f">Awarded to<input data-f="awarded_to" value="${esc(t.awarded_to||"")}" placeholder="Filled in from the L2B awarded list"></label>
+    </div>
+  </div>
+  <div class="panel"><h3>Tender details</h3>
+    <div class="grid">
+      <label>Division<select data-f="division">${DIVS.map(d=>`<option ${d===t.division?"selected":""}>${d}</option>`).join("")}</select></label>
+      <label>Type<select data-f="kind">${["Tender","RFQ","Private project"].map(k=>`<option ${k===t.kind?"selected":""}>${k}</option>`).join("")}</select></label>
+      ${inp(t,"received","Date received","date")}${inp(t,"ppa_no","PPA number")}${inp(t,"dta_no","DTA number")}${inp(t,"contract_no","Contract number")}
+      ${inp(t,"title","Title","text","wide")}
+      ${inp(t,"issuer","Issued by")}${inp(t,"location","Location")}${inp(t,"category","Category")}${inp(t,"industry","Industry")}${inp(t,"sector","Sector")}
+      <label>Public or private<select data-f="public_private"><option value=""></option>${["Public","Private","Public Private Partnership"].map(k=>`<option ${k===t.public_private?"selected":""}>${k}</option>`).join("")}</select></label>
+      ${inp(t,"value","Value")}${inp(t,"cidb_grading","CIDB grading")}${inp(t,"l2b_status","L2B status")}
+      <label>Compulsory site inspection / clarification<select data-f="site_compulsory"><option value="" ${t.site_compulsory==null?"selected":""}>Not filled in</option><option value="true" ${t.site_compulsory===true?"selected":""}>Yes, compulsory</option><option value="false" ${t.site_compulsory===false?"selected":""}>No</option></select></label>
+      ${inp(t,"site_at","Site meeting date and time","datetime-local")}${inp(t,"closing_at","Submission closes","datetime-local")}
+      <label class="wide">Site meeting details (venue, contact, notes)<textarea data-f="site_details">${esc(t.site_details||"")}</textarea></label>
+      <label class="wide">Documents required<textarea data-f="documents_required">${esc(t.documents_required||"")}</textarea></label>
+      ${inp(t,"link","Link to tender (L2B or issuer)","url","wide")}
+      <label class="wide">Notes<textarea data-f="notes">${esc(t.notes||"")}</textarea></label>
+    </div>
+    <div class="row"><span class="stamp">Added by ${esc(nameOf(t.added_by))}, ${fmt(t.created_at)}${t.updated_by?` · last change by ${esc(nameOf(t.updated_by))}, ${fmt(t.updated_at)}`:""}</span>${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" class="stamp">Open tender</a>`:""}<span class="saved" data-saved></span>
+    ${isAdmin()?`<button type="button" class="linkbtn" data-del style="color:var(--lost);margin-left:auto">Delete tender</button>`:""}</div>
+  </div>
+  <div class="panel"><h3>Followed up</h3>
+    <div class="fu">${tfus.length?tfus.map(f=>`<div class="fu-item ${f.kind}"><span class="stamp">${f.kind==="follow-up"?"Followed up":f.kind==="note"?"Note":"Update"} · ${esc(nameOf(f.by_email))} · ${fmt(f.at)}</span>${esc(f.comment||"")}</div>`).join(""):`<div class="stamp">Not followed up yet.</div>`}</div>
+    <label class="f">Comment<textarea data-fucomment placeholder="Who you spoke to, what was said, next step"></textarea></label>
+    <div class="row"><button type="button" class="primary" data-fu="follow-up">Mark followed up</button><button type="button" data-fu="note">Add note only</button></div>
+  </div>
+</div>`;
+}
+
+async function save(id,patch,el){
+  const {error}=await sb.from("tenders").update(patch).eq("id",id);
+  const s=el?.closest(".t")?.querySelector("[data-saved]");
+  if(error){alert("Couldn't save: "+error.message);return false}
+  if(s){s.textContent="Saved";setTimeout(()=>s.textContent="",1500)}
+  return true;
+}
+async function load(){
+  const [m,t,f]=await Promise.all([sb.from("tender_members").select("*").order("name"),sb.from("tenders").select("*"),sb.from("tender_followups").select("*").order("at")]);
+  if(t.error){$("list").innerHTML=`<div class="empty">Couldn't load the log: ${esc(t.error.message)}. If you were just added, ask Mariette to check your access.</div>`;return}
+  members=m.data||[];tenders=t.data||[];fus=f.data||[];render();
+}
+
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("button,[data-toggle]");if(!b)return;
+  if(b.dataset.tab){tab=b.dataset.tab;render();return}
+  if(b.dataset.f&&b.classList.contains("chip")){filter=b.dataset.f;render();return}
+  if(b.dataset.toggle&&!e.target.closest("button")){const id=b.dataset.toggle;open.has(id)?open.delete(id):open.add(id);render();return}
+  const art=b.closest(".t");if(!art)return;const id=art.dataset.id;const t=tenders.find(x=>x.id===id);
+  if(b.dataset.assign!==undefined){const e2=b.dataset.assign.toLowerCase();let a=(t.assigned_to||[]).map(x=>x.toLowerCase());a=a.includes(e2)?a.filter(x=>x!==e2):[...a,e2];await save(id,{assigned_to:a},b)}
+  else if(b.hasAttribute("data-ack"))await save(id,{acknowledged_at:new Date().toISOString()},b);
+  else if(b.dataset.decide!==undefined){const notes=art.querySelector("[data-decnotes]").value.trim();
+    if(b.dataset.decide==="Declined"&&!notes){alert("Please add the reason for declining in the notes box first.");art.querySelector("[data-decnotes]").focus();return}
+    await save(id,{decision:b.dataset.decide||null,decision_notes:notes||null},b)}
+  else if(b.dataset.work!==undefined)await save(id,{work_status:b.dataset.work||null},b);
+  else if(b.dataset.outcome!==undefined)await save(id,{outcome:b.dataset.outcome||null,awarded_to:art.querySelector('[data-f="awarded_to"]').value||null},b);
+  else if(b.dataset.fu){const c=art.querySelector("[data-fucomment]").value.trim();
+    if(b.dataset.fu==="note"&&!c){art.querySelector("[data-fucomment]").focus();return}
+    const {error}=await sb.from("tender_followups").insert({tender_id:id,kind:b.dataset.fu,comment:c||null,by_email:me});
+    if(error)alert("Couldn't save: "+error.message)}
+  else if(b.hasAttribute("data-del")){if(confirm(`Delete ${id} "${t.title}" and its follow-ups? This can't be undone.`)){const {error}=await sb.from("tenders").delete().eq("id",id);if(error)alert(error.message)}}
+  await load();
+});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset?.toggle){e.preventDefault();e.target.click()}});
+document.addEventListener("change",async e=>{
+  const el=e.target;const art=el.closest(".t");if(!art||!el.dataset.f)return;
+  let v=el.value;
+  if(el.type==="datetime-local")v=fromLocalInput(v);
+  else if(el.dataset.f==="site_compulsory")v=v===""?null:v==="true";
+  else v=v.trim()||null;
+  if(el.dataset.f==="title"&&!v){alert("A tender needs a title.");await load();return}
+  if(await save(art.dataset.id,{[el.dataset.f]:v},el)){const t=tenders.find(x=>x.id===art.dataset.id);if(t)t[el.dataset.f]=v}
+});
+$("q").addEventListener("input",e=>{q=e.target.value;render()});
+$("addBtn").onclick=()=>{const s=$("addForm").division;s.innerHTML=DIVS.map(d=>`<option ${d===tab?"selected":""}>${d}</option>`).join("");$("addMsg").textContent="";$("addDlg").showModal()};
+$("addCancel").onclick=()=>$("addDlg").close();
+$("addForm").addEventListener("submit",async e=>{e.preventDefault();const fd=Object.fromEntries(new FormData(e.target));
+  for(const k in fd)if(fd[k]==="")fd[k]=null; fd.closing_at=fromLocalInput(fd.closing_at); fd.source="Manual";
+  const {data,error}=await sb.from("tenders").insert(fd).select().single();
+  if(error){$("addMsg").textContent="Couldn't add it: "+error.message;$("addMsg").className="msg err";return}
+  e.target.reset();$("addDlg").close();open.add(data.id);filter="all";await load();});
+
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();$("loginMsg").className="msg";$("loginMsg").textContent="Signing in…";
+  const {error}=await sb.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPw").value});
+  if(error){$("loginMsg").textContent="That email and password don't match. Check them and try again.";$("loginMsg").className="msg err"}else $("loginMsg").textContent=""});
+$("signOut").onclick=()=>sb.auth.signOut();
+$("pwBtn").onclick=()=>$("pwForm").hidden=!$("pwForm").hidden;
+$("pwForm").addEventListener("submit",async e=>{e.preventDefault();const pw=$("newPw").value;if(pw.length<8){$("pwMsg").textContent="Use 8 or more characters";return}
+  const {error}=await sb.auth.updateUser({password:pw});$("pwMsg").textContent=error?"Couldn't change it: "+error.message:"Password changed";if(!error)$("newPw").value=""});
+
+let chan;
+async function start(session){
+  if(!session){$("app").hidden=true;$("login").hidden=false;return}
+  me=session.user.email.toLowerCase();$("login").hidden=true;$("app").hidden=false;
+  await load();$("whoami").textContent="Signed in as "+nameOf(me);
+  if(!chan){
+    let pending=false;
+    const live=()=>{const a=document.activeElement;if(a&&a.closest&&a.closest(".t-det")&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)){pending=true;return}load()};
+    document.addEventListener("focusout",()=>setTimeout(()=>{if(pending){pending=false;live()}},300));
+    chan=sb.channel("tenders").on("postgres_changes",{event:"*",schema:"public",table:"tenders"},live).on("postgres_changes",{event:"*",schema:"public",table:"tender_followups"},live).subscribe();
+  }
+}
+(async()=>{
+  if(!window.supabase){$("login").hidden=false;$("loginMsg").textContent="Couldn't load. Check your internet connection and reload.";return}
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  sb.auth.onAuthStateChange((_e,s)=>start(s));
+})();
+</script>
+</body>
+</html>
