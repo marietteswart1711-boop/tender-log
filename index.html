@@ -353,7 +353,7 @@ async function start(session){
 (async()=>{
   if(!window.supabase){$("login").hidden=false;$("loginMsg").textContent="Couldn't load. Check your internet connection and reload.";return}
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  sb.auth.onAuthStateChange((_e,s)=>start(s));
+  sb.auth.onAuthStateChange((_e,s)=>setTimeout(()=>start(s),0));
 })();
 </script>
 </body>
